@@ -65,7 +65,7 @@ public class LastSubmittedItemProcessor<T> implements Closeable {
     /**
      * @param itemProcessor   Funktion, die auf den Items durchgefuehrt werden soll.
      *                        Erhaelt das Item und das Identitaetsmerkmal (bspw. ID)
-     * @param executorService ExecutorService zum Abarbeiten der itemConsumer-Aufrufe.
+     * @param executorService ExecutorService zum Abarbeiten der itemProcessor-Aufrufe.
      *                        Wird in {@link LastSubmittedItemProcessor#close()} beendet.
      */
     public LastSubmittedItemProcessor(BiConsumer<T, Object> itemProcessor, ExecutorService executorService) {
