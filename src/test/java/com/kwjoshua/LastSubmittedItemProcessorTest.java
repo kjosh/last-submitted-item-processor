@@ -37,7 +37,7 @@ class LastSubmittedItemProcessorTest {
     @Test
     public void orderingIsMaintained() throws InterruptedException {
         EntityDao entityDao = new EntityDao();
-        try (LastSubmittedItemProcessor<Entity> saver = new LastSubmittedItemProcessor<>(entityDao::save)) {
+        try (LastSubmittedItemProcessor<Entity, String> saver = new LastSubmittedItemProcessor<>(entityDao::save)) {
             int i = 0;
             for (; i < 100; i++) {
                 saver.processItem(new Entity("1", i), "1");

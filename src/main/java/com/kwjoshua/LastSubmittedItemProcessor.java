@@ -42,22 +42,23 @@ import java.util.function.BiConsumer;
  *     </li>
  * </ol>
  *
- * @param <T>
+ * @param <T> Typ der zu verarbeitenden Items
+ * @param <ID> Typ des Objektes, welches gleiche Items identifiziert
  */
-public class LastSubmittedItemProcessor<T> implements Closeable {
+public class LastSubmittedItemProcessor<T, ID> implements Closeable {
     private final ExecutorService executorService;
     /**
      * Lock/Count-Objekte eindeutig je identischem Item
      */
-    private final Map<Object, AtomicInteger> countingLocks = new HashMap<>();
-    private final BiConsumer<T, Object> itemProcessor;
+    private final Map<ID, AtomicInteger> countingLocks = new HashMap<>();
+    private final BiConsumer<T, ID> itemProcessor;
 
     /**
      * Neues Objekt mit Default-Threadpool (Fixed size = Runtime.getRuntime().availableProcessors()).
      *
      * @see LastSubmittedItemProcessor#LastSubmittedItemProcessor(BiConsumer, ExecutorService)
      */
-    public LastSubmittedItemProcessor(BiConsumer<T, Object> itemProcessor) {
+    public LastSubmittedItemProcessor(BiConsumer<T, ID> itemProcessor) {
         this.itemProcessor = itemProcessor;
         this.executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
@@ -68,12 +69,12 @@ public class LastSubmittedItemProcessor<T> implements Closeable {
      * @param executorService ExecutorService zum Abarbeiten der itemProcessor-Aufrufe.
      *                        Wird in {@link LastSubmittedItemProcessor#close()} beendet.
      */
-    public LastSubmittedItemProcessor(BiConsumer<T, Object> itemProcessor, ExecutorService executorService) {
+    public LastSubmittedItemProcessor(BiConsumer<T, ID> itemProcessor, ExecutorService executorService) {
         this.itemProcessor = itemProcessor;
         this.executorService = executorService;
     }
 
-    public CompletableFuture<Void> processItem(T item, Object itemIdentity) {
+    public CompletableFuture<Void> processItem(T item, ID itemIdentity) {
         AtomicInteger countingLock;
         int count;
         synchronized (countingLocks) {
@@ -99,7 +100,7 @@ public class LastSubmittedItemProcessor<T> implements Closeable {
         }, executorService);
     }
 
-    public void processItemBlocking(T item, Object itemIdentity) {
+    public void processItemBlocking(T item, ID itemIdentity) {
         try {
             processItem(item, itemIdentity).get();
         } catch (InterruptedException | ExecutionException e) {
