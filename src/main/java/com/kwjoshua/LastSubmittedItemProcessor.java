@@ -69,19 +69,29 @@ public class LastSubmittedItemProcessor<T, ID> implements Closeable {
      * @param executorService ExecutorService zum Abarbeiten der itemProcessor-Aufrufe.
      *                        Wird in {@link LastSubmittedItemProcessor#close()} beendet.
      */
+    @SuppressWarnings("unused")
     public LastSubmittedItemProcessor(BiConsumer<T, ID> itemProcessor, ExecutorService executorService) {
         this.itemProcessor = itemProcessor;
         this.executorService = executorService;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public CompletableFuture<Void> processItem(T item, ID itemIdentity) {
+        return CompletableFuture.runAsync(getRunnable(item, itemIdentity), executorService);
+    }
+
+    public void processItemBlocking(T item, ID itemIdentity) {
+        getRunnable(item, itemIdentity).run();
+    }
+
+    private Runnable getRunnable(T item, ID itemIdentity) {
         AtomicInteger countingLock;
         int count;
         synchronized (countingLocks) {
             countingLock = countingLocks.computeIfAbsent(itemIdentity, id -> new AtomicInteger(0));
             count = countingLock.incrementAndGet();
         }
-        return CompletableFuture.runAsync(() -> {
+        return () -> {
             synchronized (countingLock) {
                 // Wurde waehrend dem Warten auf das Lock noch eine andere Operation fuer dasselbe Item
                 // durchgefuehrt, hat sich der countingLock-Zaehler erhoeht und ist nicht mehr identisch zum
@@ -97,15 +107,7 @@ public class LastSubmittedItemProcessor<T, ID> implements Closeable {
                     }
                 }
             }
-        }, executorService);
-    }
-
-    public void processItemBlocking(T item, ID itemIdentity) {
-        try {
-            processItem(item, itemIdentity).get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        };
     }
 
     @Override
