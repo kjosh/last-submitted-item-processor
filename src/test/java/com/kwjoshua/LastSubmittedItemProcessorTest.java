@@ -40,14 +40,11 @@ class LastSubmittedItemProcessorTest {
         try (LastSubmittedItemProcessor<Entity, String> saver = new LastSubmittedItemProcessor<>(entityDao::save)) {
             int i = 0;
             for (; i < 100; i++) {
-                saver.processItem(new Entity("1", i), "1");
-                if (i % 2 == 0) {
-                    saver.processItem(new Entity("2", i), "2");
+                for (int j = 1; j <= 20; j++) {
+                    String itemIdentity = String.valueOf(j);
+                    saver.processItem(new Entity(itemIdentity, i), itemIdentity);
                 }
-                if (i % 3 == 0) {
-                    saver.processItem(new Entity("3", i), "3");
-                }
-                Thread.sleep(5);
+                Thread.sleep(3);
             }
 
             saver.processItemBlocking(new Entity("1", i++), "1");
@@ -60,6 +57,7 @@ class LastSubmittedItemProcessorTest {
             for (Map.Entry<Object, List<Object>> entry : entries) {
                 int j = -1;
                 for (Object o : entry.getValue()) {
+                    System.out.printf("%s: %s\n", entry.getKey(), o);
                     int saveCount = (int) o;
                     Assertions.assertTrue(saveCount > j, saveCount + " after " + j + " for Entity " + entry.getKey());
                     j = saveCount;
